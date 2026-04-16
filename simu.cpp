@@ -12,7 +12,8 @@ struct Cible
     int fnp_value;             
 };
 
-struct ParametresArme {
+struct ParametresArme
+{
     bool rerollTouche;
     bool rerollWound;
     bool lethal_hit;
@@ -23,7 +24,8 @@ struct ParametresArme {
     int critical_wound;
 };
 
-struct Arme {
+struct Arme
+{
     int nbAttaques;
     int ct; 
     int force;
@@ -32,7 +34,8 @@ struct Arme {
     ParametresArme param;
 };
 
-struct ResultatsTouche {
+struct ResultatsTouche
+{
     int normales;
     int lethal;
     int sustained;
@@ -42,7 +45,8 @@ struct ResultatsTouche {
     double pourcentage;
 };
 
-struct ResultatsBlessure {
+struct ResultatsBlessure
+{
     int blessuresNormales;
     int blessuresMortelles;
     int totalBlessures;
@@ -57,7 +61,8 @@ struct ResultatsFinaux
 
 mt19937 gen(random_device{}());
 
-ResultatsTouche simulerTouche(const Arme& arme) {
+ResultatsTouche simulerTouche(const Arme& arme) 
+{
     int touchesNormales = 0;
     int sustainedHits = 0;
     int lethalHits = 0;
@@ -66,16 +71,19 @@ ResultatsTouche simulerTouche(const Arme& arme) {
 
     cout << "--- Phase de Touche ---" << endl;
 
-    for(int i = 0; i < arme.nbAttaques; i++) {
+    for(int i = 0; i < arme.nbAttaques; i++)
+    {
         int dice = dist(gen);
         bool succes = (dice >= arme.ct);
 
-        if (!succes && arme.param.rerollTouche) {
+        if (!succes && arme.param.rerollTouche)
+        {
             dice = dist(gen);
             succes = (dice >= arme.ct);
         }
 
-        if (succes) {
+        if (succes)
+        {
             if (arme.param.lethal_hit && dice >= arme.param.critical_hit)
                 lethalHits++;
             else 
@@ -100,7 +108,8 @@ ResultatsTouche simulerTouche(const Arme& arme) {
     return {touchesNormales, lethalHits, sustainedHits, (arme.nbAttaques - totalTouchesInitiales), totalTouchesInitiales, totalFinal, pourcentage};
 }
 
-ResultatsBlessure simulerBlessure(ResultatsTouche res, Arme arme, int enduCible, int modificateur = 0) {
+ResultatsBlessure simulerBlessure(ResultatsTouche res, Arme arme, int enduCible, int modificateur = 0)
+{
     int blessuresNormales = 0;
     int blessuresMortelles = 0;
     
@@ -116,16 +125,19 @@ ResultatsBlessure simulerBlessure(ResultatsTouche res, Arme arme, int enduCible,
     // On doit blesser avec TOUTES les touches générées (Initiales + Sustained)
     int totalTouches = res.totalFinal;
     
-    for(int i = 0; i < totalTouches; i++) {
+    for(int i = 0; i < totalTouches; i++)
+    {
         int dice = dist(gen);
         bool succes = (dice >= scoreRequis);
         
-        if (!succes && arme.param.rerollWound) {
+        if (!succes && arme.param.rerollWound)
+        {
             dice = dist(gen);
             succes = (dice >= scoreRequis);
         }
         
-        if (succes) {
+        if (succes)
+        {
             if (arme.param.devastating_wound && dice >= arme.param.critical_wound)
                 blessuresMortelles++;
             else 
@@ -162,40 +174,38 @@ ResultatsFinaux calculerDegats(const ResultatsBlessure& resB, const Cible& cible
         for(int i = 0; i < nbPointsDegats; i++)
         {
             if (dist(gen) >= cible.fnp_value)
-            {
                 echecsFnp++; // Le FNP échoue, le dégât passe
-            } else {
+            else
                 degatsBloquesParFNP++; // Le FNP réussit, le dégât est ignoré
-            }
         }
         return echecsFnp;
     };
 
     
-    for(int i = 0; i < resB.blessuresNormales; i++) {
+    for(int i = 0; i < resB.blessuresNormales; i++)
+    {
         int saveModifiee = cible.save + arme.ap;
         int seuilSave = (cible.invulnerableSave_value > 0) ? min(saveModifiee, cible.invulnerableSave_value) : saveModifiee;
 
         // Test de la Sauvegarde (Armure ou Invu)
         if (dist(gen) >= seuilSave)
-        { 
             sauvegardesReussies++; // Sauvegarde réussie
-        } else {
+        else
+        {
             // Sauvegarde échouée : on teste le FNP pour chaque point de dégât
-            if (cible.fnp_value > 0) {
+            if (cible.fnp_value > 0)
                 degatsFinal += testerFnp(arme.degats);
-            } else {
+            else
                 degatsFinal += arme.degats;
-            }
         }
     }
 
-    for(int i = 0; i < resB.blessuresMortelles; i++) {
-        if (cible.fnp_value > 0) {
+    for(int i = 0; i < resB.blessuresMortelles; i++)
+    {
+        if (cible.fnp_value > 0)
             degatsFinal += testerFnp(1); // 1 dégât par mortelle
-        } else {
+        else
             degatsFinal += 1;
-        }
     }
     cout << "\n\n--- Phase de Sauvegarde & FNP ---" << endl;
     cout << " - Dégâts maximum théoriques (sans sauvegarde ni FNP) : "
@@ -218,19 +228,19 @@ ResultatsFinaux simulerSauvegarde(const ResultatsBlessure& resB, const Cible& ci
 
 int main()
 {
-    Cible spaceMarine =
+    Cible target =
     { 
     4, // endurance
-    3, // save ()
+    4, // save ()
     0, // invulnerableSave_value (0)
     0  // fnp_value (5+)
     };
     Arme monArme =
     {
-        10, // nbAttaques : Nombre de dés lancés pour toucher
+        8, // nbAttaques : Nombre de dés lancés pour toucher
         3,  // ct : Compétence de Tir (le score requis sur 1d6)
-        6,  // force : Force de l'arme
-        2,  // ap : Pénétration d'armure (Armor Penetration)
+        9,  // force : Force de l'arme
+        4,  // ap : Pénétration d'armure (Armor Penetration)
         1, //  Dégat
         
         // ParametresArme :
@@ -250,9 +260,9 @@ int main()
     ResultatsTouche resT = simulerTouche(monArme);
     
     // On passe l'arme, le résultat de la touche, et l'endurance (ici 4)
-    ResultatsBlessure resB = simulerBlessure(resT, monArme, spaceMarine.endurance);
+    ResultatsBlessure resB = simulerBlessure(resT, monArme, target.endurance);
     
-    simulerSauvegarde(resB, spaceMarine, monArme);
+    simulerSauvegarde(resB, target, monArme);
 
     return 0;
 }
